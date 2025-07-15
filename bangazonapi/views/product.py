@@ -304,16 +304,16 @@ class Products(viewsets.ModelViewSet):
             payment_type=None
         )
 
-        order_product, created = OrderProduct.objects.get_or_create(
+        order_products, created = OrderProduct.objects.get_or_create(
             order=order,
             product=product,
             defaults={"quantity": 1},
         )
         if not created:
-            order_product.quantity += 1
-            order_product.save()
+            order_products.quantity += 1
+            order_products.save()
 
         return Response({"order_id": order.id,
-                        "order_product_id": order_product.id,
-                        "quantity": order_product.quantity},
+                        "order_products_id": order_products.id,
+                        "quantity": order_products.quantity},
                         status=status.HTTP_200_OK)
