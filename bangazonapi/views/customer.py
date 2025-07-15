@@ -11,7 +11,7 @@ class CustomerSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Customer
         url = serializers.HyperlinkedIdentityField(
-            view_name='customer', lookup_field='id'
+            view_name='customers-detail', lookup_field='id'
         )
         fields = ('id', 'url', 'user', 'phone_number', 'address')
         depth = 1
