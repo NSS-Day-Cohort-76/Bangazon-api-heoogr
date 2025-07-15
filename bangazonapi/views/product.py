@@ -26,6 +26,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class Products(viewsets.ModelViewSet):
     """Request handlers for Products in the Bangazon Platform"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
+    queryset = Product.objects.all()
 
     def create(self, request):
         """
