@@ -10,4 +10,12 @@ class Payment(SafeDeleteModel):
     account_number = models.CharField(max_length=25)
     customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, related_name="payment_types")
     expiration_date = models.DateField(default="0000-00-00",)
-    create_date = models.DateField(default="0000-00-00",)
+    create_date = models.DateTimeField(auto_now_add=True)
+
+
+    @property
+    def obscured_num(self):
+        """Return obscured account number for security"""
+        if self.account_number and len(self.account_number) > 4:
+            return "*" * (len(self.account_number) - 4) + self.account_number[-4:]
+        return self.account_number or ""
