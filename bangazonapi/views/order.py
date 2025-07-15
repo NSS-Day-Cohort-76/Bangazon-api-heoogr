@@ -104,6 +104,7 @@ class Orders(ViewSet):
         """
         customer = Customer.objects.get(user=request.auth.user)
         order = Order.objects.get(pk=pk, customer=customer)
+        #working on getting the correct .data["paymenttype"] to be updated
         order.payment_type = request.data["payment_type"]
         order.save()
 
