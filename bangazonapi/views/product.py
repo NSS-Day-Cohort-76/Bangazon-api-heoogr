@@ -8,7 +8,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import status
-from bangazonapi.models import Product, Customer, ProductCategory, LineItem, Order
+from bangazonapi.models import Product, Customer, ProductCategory, OrderProduct, Order
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -304,16 +304,16 @@ class Products(viewsets.ModelViewSet):
             payment_type=None
         )
 
-        line_item, created = LineItem.objects.get_or_create(
+        order_product, created = OrderProduct.objects.get_or_create(
             order=order,
             product=product,
             defaults={"quantity": 1},
         )
         if not created:
-            line_item.quantity += 1
-            line_item.save()
+            order_product.quantity += 1
+            order_product.save()
 
         return Response({"order_id": order.id,
-                        "line_item_id": line_item.id,
-                        "quantity": line_item.quantity},
+                        "order_product_id": order_product.id,
+                        "quantity": order_product.quantity},
                         status=status.HTTP_200_OK)
