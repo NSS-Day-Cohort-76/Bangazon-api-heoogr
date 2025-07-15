@@ -4,11 +4,11 @@ from bangazonapi.models.recommendation import Recommendation
 import base64
 from django.core.files.base import ContentFile
 from django.http import HttpResponseServerError
-from rest_framework.viewsets import ViewSet
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import status
-from bangazonapi.models import Product, Customer, ProductCategory
+from bangazonapi.models import Product, Customer, ProductCategory, LineItem, Order
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -23,7 +23,7 @@ class ProductSerializer(serializers.ModelSerializer):
         depth = 1
 
 
-class Products(ViewSet):
+class Products(viewsets.ModelViewSet):
     """Request handlers for Products in the Bangazon Platform"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
@@ -293,3 +293,26 @@ class Products(ViewSet):
             return Response(None, status=status.HTTP_204_NO_CONTENT)
 
         return Response(None, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    @action(detail=True, methods=["post"], url_path="add_to_order")
+    def add_to_order(self, request, pk=None):
+        product = self.get_object()
+        customer = request.user.customer
+        order, _ = Order.objects.get_or_create(
+            customer = customer,
+            payment_type=None
+        )
+
+        line_item, created = LineItem.objects.get_or_create(
+            order=order,
+            product=product,
+            defaults={"quantity": 1},
+        )
+        if not created:
+            line_item.quantity += 1
+            line_item.save()
+
+        return Response({"order_id": order.id,
+                        "line_item_id": line_item.id,
+                        "quantity": line_item.quantity},
+                        status=status.HTTP_200_OK)
