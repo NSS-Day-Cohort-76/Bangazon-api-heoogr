@@ -10,3 +10,5 @@ class OrderProduct(models.Model):
     product = models.ForeignKey("Product",
                                 on_delete=models.DO_NOTHING,
                                 related_name="lineitems")
+    
+    quantity = models.PositiveIntegerField(default=1)
