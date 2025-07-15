@@ -82,7 +82,7 @@ class Profile(ViewSet):
         """
         try:
             current_user = Customer.objects.get(user=request.user)
-            current_user.recommends = Recommendation.objects.filter(recommender=current_user)
+            # current_user.recommends = Recommendation.objects.filter(recommender=current_user)
 
             serializer = ProfileSerializer(
                 current_user, many=False, context={'request': request})
@@ -364,19 +364,23 @@ class RecommenderSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    """JSON serializer for customer profile
-
-    Arguments:
-        serializers
-    """
     user = UserSerializer(many=False)
-    recommends = RecommenderSerializer(many=True)
+    recommends = serializers.SerializerMethodField()
+    payment_types = serializers.HyperlinkedRelatedField(
+        many=True,
+        read_only=True,
+        view_name='payment-detail'  # Make sure this matches your router name
+    )
 
     class Meta:
         model = Customer
-        fields = ('id', 'url', 'user', 'phone_number',
-                  'address', 'payment_types', 'recommends',)
+        fields = ('id', 'url', 'user', 'phone_number', 'address', 'payment_types', 'recommends',)
         depth = 1
+
+    def get_recommends(self, customer):
+        recs = Recommendation.objects.filter(recommender=customer)
+        return RecommenderSerializer(recs, many=True, context=self.context).data
+
 
 
 class FavoriteUserSerializer(serializers.HyperlinkedModelSerializer):
