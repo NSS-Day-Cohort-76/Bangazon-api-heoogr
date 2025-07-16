@@ -11,6 +11,8 @@ from rest_framework import status
 from bangazonapi.models import Product, Customer, ProductCategory, OrderProduct, Order
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.utils import timezone
+from django.db import models
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -27,6 +29,7 @@ class Products(viewsets.ModelViewSet):
     """Request handlers for Products in the Bangazon Platform"""
     permission_classes = (IsAuthenticatedOrReadOnly,)
     queryset = Product.objects.all()
+    created_date = models.DateTimeField(default=timezone.now)
 
     def create(self, request):
         """
@@ -301,14 +304,17 @@ class Products(viewsets.ModelViewSet):
         customer = request.user.customer
         order, _ = Order.objects.get_or_create(
             customer = customer,
-            payment_type=None
+            payment_type=None,
+            created_date=timezone.now()
         )
 
         order_products, created = OrderProduct.objects.get_or_create(
             order=order,
             product=product,
-            defaults={"quantity": 1},
+            defaults={"quantity": 1
+            }
         )
+
         if not created:
             order_products.quantity += 1
             order_products.save()
