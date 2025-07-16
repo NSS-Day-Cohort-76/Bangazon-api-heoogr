@@ -2,6 +2,7 @@
 
 from rest_framework.decorators import action
 from bangazonapi.models.recommendation import Recommendation
+from django.db.models import Count, Q
 import base64
 from django.core.files.base import ContentFile
 from django.http import HttpResponseServerError
@@ -12,9 +13,13 @@ from rest_framework import status
 from bangazonapi.models import Product, Customer, ProductCategory, OrderProduct, Order
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.utils import timezone
+from django.db import models
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    number_sold = serializers.IntegerField(source="sold_count", read_only=True)
+
     """JSON serializer for products"""
 
     class Meta:
@@ -40,6 +45,7 @@ class Products(viewsets.ModelViewSet):
 
     permission_classes = (IsAuthenticatedOrReadOnly,)
     queryset = Product.objects.all()
+    created_date = models.DateTimeField(default=timezone.now)
 
     def create(self, request):
         """
@@ -260,7 +266,11 @@ class Products(viewsets.ModelViewSet):
                 }
             ]
         """
-        products = Product.objects.all()
+        products = Product.objects.annotate(
+            sold_count=Count(
+                "lineitems", filter=Q(lineitems__order__payment_type__isnull=False)
+            )
+        )
 
         # Support filtering by category and/or quantity
         category = self.request.query_params.get("category", None)
@@ -268,19 +278,42 @@ class Products(viewsets.ModelViewSet):
         order = self.request.query_params.get("order_by", None)
         direction = self.request.query_params.get("direction", None)
         number_sold = self.request.query_params.get("number_sold", None)
+        location = self.request.query_params.get("location", None)
+        min_price = self.request.query_params.get("min_price", None)
+        name = self.request.query_params.get("name")
 
+        # Apply sorting
         if order is not None:
             order_filter = order
-
-            if direction is not None:
-                if direction == "desc":
-                    order_filter = f"-{order}"
-
+            if direction == "desc":
+                order_filter = f"-{order}"
             products = products.order_by(order_filter)
 
+        # Filter by name in the search bar
+        if name:
+            products = products.filter(name__icontains=name)
+
+        # Filter by location
+        if location is not None:
+            products = products.filter(location__icontains=location)
+
+        # Filter by category
         if category is not None:
             products = products.filter(category__id=category)
 
+        # Filter by minimum price
+        if min_price is not None:
+            try:
+                min_price_val = float(min_price)
+                products = products.filter(price__gte=min_price_val)
+            except ValueError:
+                pass  # Ignore invalid min_price filter
+
+        # Filter by number_sold using the annotated field
+        if number_sold is not None:
+            products = products.filter(sold_count__lte=int(number_sold))
+
+        # Limit quantity of results
         if quantity is not None:
             products = products.order_by("-created_date")[: int(quantity)]
 
@@ -293,6 +326,7 @@ class Products(viewsets.ModelViewSet):
 
             products = filter(sold_filter, products)
 
+        # Serialize and return
         serializer = ProductSerializer(
             products, many=True, context={"request": request}
         )
@@ -318,13 +352,14 @@ class Products(viewsets.ModelViewSet):
     def add_to_order(self, request, pk=None):
         product = self.get_object()
         customer = request.user.customer
-        order, _ = Order.objects.get_or_create(customer=customer, payment_type=None)
+        order, _ = Order.objects.get_or_create(
+            customer=customer, payment_type=None, created_date=timezone.now()
+        )
 
         order_products, created = OrderProduct.objects.get_or_create(
-            order=order,
-            product=product,
-            defaults={"quantity": 1},
+            order=order, product=product, defaults={"quantity": 1}
         )
+
         if not created:
             order_products.quantity += 1
             order_products.save()

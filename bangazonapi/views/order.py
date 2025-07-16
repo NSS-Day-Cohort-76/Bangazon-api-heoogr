@@ -26,6 +26,24 @@ class OrderLineItemSerializer(serializers.HyperlinkedModelSerializer):
         depth = 1
 
 
+class PaymentSerializer(serializers.HyperlinkedModelSerializer):
+    obscured_num = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Payment
+        fields = (
+            "url",
+            "id",
+            "merchant_name",
+            "account_number",
+            "expiration_date",
+            "create_date",
+            "customer",
+            "obscured_num",
+        )
+        depth = 1
+
+
 class OrderSerializer(serializers.HyperlinkedModelSerializer):
     """JSON serializer for customer orders"""
 
@@ -106,7 +124,7 @@ class Orders(ViewSet):
         """
         customer = Customer.objects.get(user=request.auth.user)
         order = Order.objects.get(pk=pk, customer=customer)
-        order.payment_type = request.data["payment_type"]
+        order.payment_type_id = request.data["paymentTypeId"]
         order.save()
 
         return Response({}, status=status.HTTP_204_NO_CONTENT)
