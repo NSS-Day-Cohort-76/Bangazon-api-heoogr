@@ -261,6 +261,7 @@ class Products(viewsets.ModelViewSet):
         direction = self.request.query_params.get('direction', None)
         number_sold = self.request.query_params.get('number_sold', None)
         location = self.request.query_params.get('location', None)
+        min_price = self.request.query_params.get('min_price', None)
 
 
         # Apply sorting
@@ -277,6 +278,14 @@ class Products(viewsets.ModelViewSet):
         # Filter by category
         if category is not None:
             products = products.filter(category__id=category)
+
+        # Filter by minimum price
+        if min_price is not None:
+            try:
+                min_price_val = float(min_price)
+                products = products.filter(price__gte=min_price_val)
+            except ValueError:
+                pass  # Ignore invalid min_price filter
 
         # Filter by number_sold using the annotated field
         if number_sold is not None:

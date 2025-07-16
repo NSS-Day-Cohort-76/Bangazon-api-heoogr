@@ -41,17 +41,27 @@ class Product(SafeDeleteModel):
         null=True,
     )
 
+    
+    
     @property
     def number_sold(self):
-        """number_sold property of a product
-
-        Returns:
-            int -- Number items on completed orders
-        """
         sold = OrderProduct.objects.filter(
             product=self, order__payment_type__isnull=False
-        )
-        return sold.count()
+        ).aggregate(total_sold=models.Sum('quantity'))
+        return sold['total_sold'] or 0
+    
+    
+    # @property
+    # def number_sold(self):
+    #     """number_sold property of a product
+
+    #     Returns:
+    #         int -- Number items on completed orders
+    #     """
+    #     sold = OrderProduct.objects.filter(
+    #         product=self, order__payment_type__isnull=False
+    #     )
+    #     return sold.count()
 
     @property
     def can_be_rated(self):
