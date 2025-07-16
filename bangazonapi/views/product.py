@@ -265,6 +265,7 @@ class Products(viewsets.ModelViewSet):
         number_sold = self.request.query_params.get('number_sold', None)
         location = self.request.query_params.get('location', None)
         min_price = self.request.query_params.get('min_price', None)
+        name = self.request.query_params.get('name')
 
 
         # Apply sorting
@@ -273,6 +274,10 @@ class Products(viewsets.ModelViewSet):
             if direction == "desc":
                 order_filter = f'-{order}'
             products = products.order_by(order_filter)
+
+        # Filter by name in the search bar
+        if name:
+            products = products.filter(name__icontains=name)
 
         # Filter by location
         if location is not None:
