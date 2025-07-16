@@ -64,7 +64,7 @@ class Product(SafeDeleteModel):
             for rating in ratings:
                 total_rating += rating.rating
 
-            avg = total_rating / len(rating)
+            avg = total_rating / ratings.count() # changed from len(rating) because the average needs the amount(count) of ratings since it is an object, not a list. 
             return avg
 
         except ZeroDivisionError: 

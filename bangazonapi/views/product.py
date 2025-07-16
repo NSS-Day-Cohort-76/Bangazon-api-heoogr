@@ -1,6 +1,7 @@
 """View module for handling requests about products"""
 from rest_framework.decorators import action
 from bangazonapi.models.recommendation import Recommendation
+from django.db.models import Count, Q
 import base64
 from django.core.files.base import ContentFile
 from django.http import HttpResponseServerError
@@ -14,6 +15,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    number_sold = serializers.IntegerField(source='sold_count', read_only=True)
+
+
     """JSON serializer for products"""
     class Meta:
         model = Product
@@ -243,7 +247,12 @@ class Products(viewsets.ModelViewSet):
                 }
             ]
         """
-        products = Product.objects.all()
+        products = Product.objects.annotate(
+            sold_count=Count(
+                'lineitems',
+                filter=Q(lineitems__order__payment_type__isnull=False)
+            )
+        )
 
         # Support filtering by category and/or quantity
         category = self.request.query_params.get('category', None)
@@ -251,32 +260,34 @@ class Products(viewsets.ModelViewSet):
         order = self.request.query_params.get('order_by', None)
         direction = self.request.query_params.get('direction', None)
         number_sold = self.request.query_params.get('number_sold', None)
+        location = self.request.query_params.get('location', None)
 
+
+        # Apply sorting
         if order is not None:
             order_filter = order
-
-            if direction is not None:
-                if direction == "desc":
-                    order_filter = f'-{order}'
-
+            if direction == "desc":
+                order_filter = f'-{order}'
             products = products.order_by(order_filter)
 
+        # Filter by location
+        if location is not None:
+            products = products.filter(location__icontains=location)
+
+        # Filter by category
         if category is not None:
             products = products.filter(category__id=category)
 
+        # Filter by number_sold using the annotated field
+        if number_sold is not None:
+            products = products.filter(sold_count__lte=int(number_sold))
+
+        # Limit quantity of results
         if quantity is not None:
             products = products.order_by("-created_date")[:int(quantity)]
 
-        if number_sold is not None:
-            def sold_filter(product):
-                if product.number_sold <= int(number_sold):
-                    return True
-                return False
-
-            products = filter(sold_filter, products)
-
-        serializer = ProductSerializer(
-            products, many=True, context={'request': request})
+        # Serialize and return
+        serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(methods=['post'], detail=True)
