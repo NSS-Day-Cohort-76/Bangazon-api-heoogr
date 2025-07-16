@@ -128,7 +128,6 @@ class Cart(ViewSet):
             final["order"]["size"] = len(products_on_order)
 
         except Order.DoesNotExist as ex:
-            print('No Order')
-            return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'No Orders': ex.args[0]}, [])
 
         return Response(final["order"])
