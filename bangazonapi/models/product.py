@@ -41,16 +41,13 @@ class Product(SafeDeleteModel):
         null=True,
     )
 
-    
-    
     @property
     def number_sold(self):
         sold = OrderProduct.objects.filter(
             product=self, order__payment_type__isnull=False
-        ).aggregate(total_sold=models.Sum('quantity'))
-        return sold['total_sold'] or 0
-    
-    
+        ).aggregate(total_sold=models.Sum("quantity"))
+        return sold["total_sold"] or 0
+
     # @property
     # def number_sold(self):
     #     """number_sold property of a product
@@ -90,7 +87,9 @@ class Product(SafeDeleteModel):
             for rating in ratings:
                 total_rating += rating.rating
 
-            avg = total_rating / ratings.count() # changed from len(rating) because the average needs the amount(count) of ratings since it is an object, not a list. 
+            avg = (
+                total_rating / ratings.count()
+            )  # changed from len(rating) because the average needs the amount(count) of ratings since it is an object, not a list.
             return avg
 
         except ZeroDivisionError:
