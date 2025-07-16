@@ -8,12 +8,13 @@ from bangazonapi.models import Customer
 
 class CustomerSerializer(serializers.HyperlinkedModelSerializer):
     """JSON serializer for customers"""
+
     class Meta:
         model = Customer
         url = serializers.HyperlinkedIdentityField(
-            view_name='customers-detail', lookup_field='id'
+            view_name="customers-detail", lookup_field="id"
         )
-        fields = ('id', 'url', 'user', 'phone_number', 'address')
+        fields = ("id", "url", "user", "phone_number", "address")
         depth = 1
 
 

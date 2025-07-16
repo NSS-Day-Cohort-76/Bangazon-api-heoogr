@@ -1,4 +1,5 @@
 """View module for handling requests about products"""
+
 from rest_framework.decorators import action
 from bangazonapi.models.recommendation import Recommendation
 from django.db.models import Count, Q
@@ -17,20 +18,31 @@ from django.db import models
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    number_sold = serializers.IntegerField(source='sold_count', read_only=True)
-
+    number_sold = serializers.IntegerField(source="sold_count", read_only=True)
 
     """JSON serializer for products"""
+
     class Meta:
         model = Product
-        fields = ('id', 'name', 'price', 'number_sold', 'description',
-                  'quantity', 'created_date', 'location', 'image_path',
-                  'average_rating', 'can_be_rated', )
+        fields = (
+            "id",
+            "name",
+            "price",
+            "number_sold",
+            "description",
+            "quantity",
+            "created_date",
+            "location",
+            "image_path",
+            "average_rating",
+            "can_be_rated",
+        )
         depth = 1
 
 
 class Products(viewsets.ModelViewSet):
     """Request handlers for Products in the Bangazon Platform"""
+
     permission_classes = (IsAuthenticatedOrReadOnly,)
     queryset = Product.objects.all()
     created_date = models.DateTimeField(default=timezone.now)
@@ -106,16 +118,18 @@ class Products(viewsets.ModelViewSet):
         new_product.category = product_category
 
         if "image_path" in request.data:
-            format, imgstr = request.data["image_path"].split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name=f'{new_product.id}-{request.data["name"]}.{ext}')
+            format, imgstr = request.data["image_path"].split(";base64,")
+            ext = format.split("/")[-1]
+            data = ContentFile(
+                base64.b64decode(imgstr),
+                name=f'{new_product.id}-{request.data["name"]}.{ext}',
+            )
 
             new_product.image_path = data
 
         new_product.save()
 
-        serializer = ProductSerializer(
-            new_product, context={'request': request})
+        serializer = ProductSerializer(new_product, context={"request": request})
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -160,7 +174,7 @@ class Products(viewsets.ModelViewSet):
         """
         try:
             product = Product.objects.get(pk=pk)
-            serializer = ProductSerializer(product, context={'request': request})
+            serializer = ProductSerializer(product, context={"request": request})
             return Response(serializer.data)
         except Exception as ex:
             return HttpResponseServerError(ex)
@@ -217,10 +231,12 @@ class Products(viewsets.ModelViewSet):
             return Response({}, status=status.HTTP_204_NO_CONTENT)
 
         except Product.DoesNotExist as ex:
-            return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as ex:
-            return Response({'message': ex.args[0]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"message": ex.args[0]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def list(self, request):
         """
@@ -252,27 +268,25 @@ class Products(viewsets.ModelViewSet):
         """
         products = Product.objects.annotate(
             sold_count=Count(
-                'lineitems',
-                filter=Q(lineitems__order__payment_type__isnull=False)
+                "lineitems", filter=Q(lineitems__order__payment_type__isnull=False)
             )
         )
 
         # Support filtering by category and/or quantity
-        category = self.request.query_params.get('category', None)
-        quantity = self.request.query_params.get('quantity', None)
-        order = self.request.query_params.get('order_by', None)
-        direction = self.request.query_params.get('direction', None)
-        number_sold = self.request.query_params.get('number_sold', None)
-        location = self.request.query_params.get('location', None)
-        min_price = self.request.query_params.get('min_price', None)
-        name = self.request.query_params.get('name')
-
+        category = self.request.query_params.get("category", None)
+        quantity = self.request.query_params.get("quantity", None)
+        order = self.request.query_params.get("order_by", None)
+        direction = self.request.query_params.get("direction", None)
+        number_sold = self.request.query_params.get("number_sold", None)
+        location = self.request.query_params.get("location", None)
+        min_price = self.request.query_params.get("min_price", None)
+        name = self.request.query_params.get("name")
 
         # Apply sorting
         if order is not None:
             order_filter = order
             if direction == "desc":
-                order_filter = f'-{order}'
+                order_filter = f"-{order}"
             products = products.order_by(order_filter)
 
         # Filter by name in the search bar
@@ -301,20 +315,31 @@ class Products(viewsets.ModelViewSet):
 
         # Limit quantity of results
         if quantity is not None:
-            products = products.order_by("-created_date")[:int(quantity)]
+            products = products.order_by("-created_date")[: int(quantity)]
+
+        if number_sold is not None:
+
+            def sold_filter(product):
+                if product.number_sold <= int(number_sold):
+                    return True
+                return False
+
+            products = filter(sold_filter, products)
 
         # Serialize and return
-        serializer = ProductSerializer(products, many=True, context={'request': request})
+        serializer = ProductSerializer(
+            products, many=True, context={"request": request}
+        )
         return Response(serializer.data)
 
-    @action(methods=['post'], detail=True)
+    @action(methods=["post"], detail=True)
     def recommend(self, request, pk=None):
         """Recommend products to other users"""
 
         if request.method == "POST":
             rec = Recommendation()
             rec.recommender = Customer.objects.get(user=request.auth.user)
-            rec.customer = Customer.objects.get(user__id=request.data["recipient"])
+            rec.customer = Customer.objects.get(user__username=request.data["username"])
             rec.product = Product.objects.get(pk=pk)
 
             rec.save()
@@ -322,29 +347,28 @@ class Products(viewsets.ModelViewSet):
             return Response(None, status=status.HTTP_204_NO_CONTENT)
 
         return Response(None, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-    
+
     @action(detail=True, methods=["post"], url_path="add_to_order")
     def add_to_order(self, request, pk=None):
         product = self.get_object()
         customer = request.user.customer
         order, _ = Order.objects.get_or_create(
-            customer = customer,
-            payment_type=None,
-            created_date=timezone.now()
+            customer=customer, payment_type=None, created_date=timezone.now()
         )
 
         order_products, created = OrderProduct.objects.get_or_create(
-            order=order,
-            product=product,
-            defaults={"quantity": 1
-            }
+            order=order, product=product, defaults={"quantity": 1}
         )
 
         if not created:
             order_products.quantity += 1
             order_products.save()
 
-        return Response({"order_id": order.id,
-                        "order_products_id": order_products.id,
-                        "quantity": order_products.quantity},
-                        status=status.HTTP_200_OK)
+        return Response(
+            {
+                "order_id": order.id,
+                "order_products_id": order_products.id,
+                "quantity": order_products.quantity,
+            },
+            status=status.HTTP_200_OK,
+        )

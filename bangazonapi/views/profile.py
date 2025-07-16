@@ -368,6 +368,19 @@ class ProfileProductSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "name",
+            "price",
+        )
+
+
+class RecommendationSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
+    recommender = CustomerSerializer()
+
+    class Meta:
+        model = Recommendation
+        fields = (
+            "product",
+            "recommender",
         )
 
 
