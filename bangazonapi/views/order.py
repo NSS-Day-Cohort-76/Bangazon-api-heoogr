@@ -123,11 +123,13 @@ class Orders(ViewSet):
             HTTP/1.1 204 No Content
         """
         customer = Customer.objects.get(user=request.auth.user)
-        order = Order.objects.get(pk=pk, customer=customer)
-        order.payment_type_id = request.data["paymentTypeId"]
+
+
+        order = Order.objects.filter(pk=pk, customer=customer)
+        order.payment_type_id = request.data["paymentTypeId"] 
         order.save()
 
-        return Response({}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"error": "Your Cart is empty. Please add a product first"}, status=400)
 
     def list(self, request):
         """

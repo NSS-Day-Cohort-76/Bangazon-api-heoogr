@@ -109,10 +109,16 @@ class Cart(ViewSet):
         """
         current_user = Customer.objects.get(user=request.auth.user)
         try:
-            open_order = Order.objects.get(
-                customer=current_user, payment_type=None)
-
-            products_on_order = Product.objects.filter(
+            open_order = Order.objects.filter(
+                customer=current_user, payment_type=None).first()
+  #there is no ordre that relates to customer that is open, so it needs to create a new order or use the existing.
+            if open_order is None:
+                products_on_order = Product()
+                products_on_order.created_date = datetime.datetime.now()
+                products_on_order.customer = current_user
+                products_on_order.payment_type = None
+            else:
+                products_on_order = Product.objects.filter(
                 lineitems__order=open_order)
 
             serialized_order = OrderSerializer(
