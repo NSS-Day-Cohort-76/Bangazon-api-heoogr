@@ -25,20 +25,21 @@ class OrderLineItemSerializer(serializers.HyperlinkedModelSerializer):
         fields = ("id", "product")
         depth = 1
 
+
 class PaymentSerializer(serializers.HyperlinkedModelSerializer):
     obscured_num = serializers.ReadOnlyField()
 
     class Meta:
         model = Payment
         fields = (
-            'url',
-            'id',
-            'merchant_name',
-            'account_number',
-            'expiration_date',
-            'create_date',
-            'customer',
-            'obscured_num',
+            "url",
+            "id",
+            "merchant_name",
+            "account_number",
+            "expiration_date",
+            "create_date",
+            "customer",
+            "obscured_num",
         )
         depth = 1
 
@@ -172,6 +173,7 @@ class Orders(ViewSet):
         json_orders = OrderSerializer(orders, many=True, context={"request": request})
 
         return Response(json_orders.data)
+
     
 
     def destroy(self, request, pk=None):
@@ -182,3 +184,4 @@ class Orders(ViewSet):
         
         except Order.DoesNotExist as ex:
             return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
