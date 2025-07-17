@@ -1,6 +1,7 @@
 """View module for handling requests about customer profiles"""
 
 import datetime
+from django.db.models import Count, Q
 from django.http import HttpResponseServerError
 from django.contrib.auth.models import User
 from rest_framework import serializers, status
@@ -13,6 +14,7 @@ from bangazonapi.models import OrderProduct, Favorite
 from bangazonapi.models import Recommendation
 from .product import ProductSerializer
 from .order import OrderSerializer
+from .store import StoreSerializer
 
 
 class Profile(ViewSet):
@@ -407,7 +409,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         read_only=True,
         view_name="payment-detail",  # Make sure this matches your router name
     )
-
+    store = StoreSerializer(source="user.store", read_only=True)
     class Meta:
         model = Customer
         fields = (
@@ -419,6 +421,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "payment_types",
             "recommends",
             "recommended_to_me",
+            "store",
         )
         depth = 1
 

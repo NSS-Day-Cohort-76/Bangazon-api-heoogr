@@ -114,7 +114,7 @@ class Products(viewsets.ModelViewSet):
         customer = Customer.objects.get(user=request.auth.user)
         new_product.customer = customer
 
-        product_category = ProductCategory.objects.get(pk=request.data["category_id"])
+        product_category = ProductCategory.objects.get(pk=request.data["categoryId"])
         new_product.category = product_category
 
         if "image_path" in request.data:
@@ -318,13 +318,7 @@ class Products(viewsets.ModelViewSet):
             products = products.order_by("-created_date")[: int(quantity)]
 
         if number_sold is not None:
-
-            def sold_filter(product):
-                if product.number_sold <= int(number_sold):
-                    return True
-                return False
-
-            products = filter(sold_filter, products)
+            products = products.filter(sold_count__lte=int(number_sold))
 
         # Serialize and return
         serializer = ProductSerializer(

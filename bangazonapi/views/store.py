@@ -1,9 +1,13 @@
 from django.http import HttpResponseServerError
+from django.db.models import Count, Q
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 from bangazonapi.models import Store 
+from bangazonapi.models import Product
+from .product import ProductSerializer
 from django.contrib.auth.models import User
 
 
@@ -99,3 +103,32 @@ class Stores(ViewSet):
         except Exception as ex:
             return HttpResponseServerError(ex)
 
+
+
+
+    @action(detail=True, methods=["get"])
+    def products(self, request, pk=None):
+        try:
+            store = Store.objects.get(pk=pk)
+
+            if store.seller != request.user:
+                return Response({"detail": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+            # Use your corrected product query here:
+            products = Product.objects.filter(customer__user=store.seller).annotate(
+                sold_count=Count(
+                    "lineitems",
+                    filter=Q(lineitems__order__payment_type__isnull=False)
+                )
+            )
+
+            selling = products.filter(sold_count=0)
+            sold = products.filter(sold_count__gt=0)
+
+            return Response({
+                "selling": ProductSerializer(selling, many=True, context={"request": request}).data,
+                "sold": ProductSerializer(sold, many=True, context={"request": request}).data,
+            }, status=status.HTTP_200_OK)
+
+        except Store.DoesNotExist:
+            return Response({"detail": "Store not found"}, status=status.HTTP_404_NOT_FOUND)
