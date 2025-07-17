@@ -122,12 +122,16 @@ class Orders(ViewSet):
         @apiSuccessExample {json} Success
             HTTP/1.1 204 No Content
         """
+        order_products = OrderProduct.objects.filter(order=order)
+        order = Order.objects.filter(pk=pk, customer=customer)
         customer = Customer.objects.get(user=request.auth.user)
-        order = Order.objects.get(pk=pk, customer=customer)
-        order.payment_type_id = request.data["paymentTypeId"]
-        order.save()
 
-        return Response({}, status=status.HTTP_204_NO_CONTENT)
+        if order_products.exists():
+            order.payment_type_id = request.data["paymentTypeId"] 
+            order.save()
+            return Response({'message': 'Order Updated'}, status=status.HTTP_200_OK)
+        else:
+            return Response([], status=status.HTTP_404_NOT_FOUND)
 
     def list(self, request):
         """
