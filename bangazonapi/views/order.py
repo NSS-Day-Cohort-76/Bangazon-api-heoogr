@@ -39,7 +39,6 @@ class PaymentSerializer(serializers.HyperlinkedModelSerializer):
             'create_date',
             'customer',
             'obscured_num',
-
         )
         depth = 1
 
@@ -122,14 +121,16 @@ class Orders(ViewSet):
         @apiSuccessExample {json} Success
             HTTP/1.1 204 No Content
         """
+        order_products = OrderProduct.objects.filter(order=order)
+        order = Order.objects.filter(pk=pk, customer=customer)
         customer = Customer.objects.get(user=request.auth.user)
 
-
-        order = Order.objects.filter(pk=pk, customer=customer)
-        order.payment_type_id = request.data["paymentTypeId"] 
-        order.save()
-
-        return Response({"error": "Your Cart is empty. Please add a product first"}, status=400)
+        if order_products.exists():
+            order.payment_type_id = request.data["paymentTypeId"] 
+            order.save()
+            return Response({'message': 'Order Updated'}, status=status.HTTP_200_OK)
+        else:
+            return Response([], status=status.HTTP_404_NOT_FOUND)
 
     def list(self, request):
         """
