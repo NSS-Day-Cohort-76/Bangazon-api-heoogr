@@ -7,8 +7,10 @@ from .customer import Customer
 class ProductLike(models.Model):
     """Model for tracking likes on products"""
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="likes")
+    customer = models.ForeignKey(
+        Customer, on_delete=models.CASCADE, related_name="liked_products"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

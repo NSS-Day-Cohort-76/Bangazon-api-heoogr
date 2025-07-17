@@ -43,10 +43,6 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_path",
             "average_rating",
             "can_be_rated",
-            "can_be_liked",
-            serializers.BooleanField(read_only=True),
-            "can_be_unliked",
-            serializers.BooleanField(read_only=True),
         )
         depth = 1
 
@@ -358,6 +354,26 @@ class Products(viewsets.ModelViewSet):
             return Response(None, status=status.HTTP_204_NO_CONTENT)
 
         return Response(None, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @action(methods=["post", "delete"], detail=True, url_path="like")
+    def like(self, request, pk=None):
+        customer = Customer.objects.get(user=request.user)
+        product = Product.objects.get(pk=pk)
+        if request.method == "POST":
+            ProductLike.objects.get_or_create(customer=customer, product=product)
+            return Response({"liked": True}, status=status.HTTP_201_CREATED)
+        elif request.method == "DELETE":
+            ProductLike.objects.filter(customer=customer, product=product).delete()
+            return Response({"liked": False}, status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=["get"], detail=False, url_path="liked")
+    def liked(self, request):
+        customer = Customer.objects.get(user=request.user)
+        liked_products = Product.objects.filter(likes__customer=customer)
+        serializer = ProductSerializer(
+            liked_products, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
 
     @action(detail=True, methods=["post"], url_path="add_to_order")
     def add_to_order(self, request, pk=None):
