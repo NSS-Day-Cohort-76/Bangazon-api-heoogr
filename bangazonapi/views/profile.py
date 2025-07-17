@@ -372,6 +372,18 @@ class ProfileProductSerializer(serializers.ModelSerializer):
         )
 
 
+class LikeSerializer(serializers.ModelSerializer):
+    """JSON serializer for likes"""
+
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "name",
+            "price",
+        )
+
+
 class RecommendationSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
     recommender = CustomerSerializer()

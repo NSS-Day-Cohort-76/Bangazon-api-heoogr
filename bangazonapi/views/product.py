@@ -10,7 +10,14 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import status
-from bangazonapi.models import Product, Customer, ProductCategory, OrderProduct, Order
+from bangazonapi.models import (
+    Product,
+    Customer,
+    ProductCategory,
+    OrderProduct,
+    Order,
+    ProductLike,
+)
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
@@ -36,6 +43,10 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_path",
             "average_rating",
             "can_be_rated",
+            "can_be_liked",
+            serializers.BooleanField(read_only=True),
+            "can_be_unliked",
+            serializers.BooleanField(read_only=True),
         )
         depth = 1
 
