@@ -1,0 +1,29 @@
+[
+  {
+    "model": "bangazonapi.store",
+    "pk": 1,
+    "fields": {
+      "seller": 5,
+      "name": "Demo Store 1",
+      "description": "This is a test store"
+    }
+  },
+  {
+    "model": "bangazonapi.store",
+    "pk": 2,
+    "fields": {
+      "seller": 6,
+      "name": "Demo Store 2",
+      "description": "This is a test store"
+    }
+  },
+  {
+    "model": "bangazonapi.store",
+    "pk": 3,
+    "fields": {
+      "seller": 7,
+      "name": "Demo Store 3",
+      "description": "This is a test store"
+    }
+  }
+]
