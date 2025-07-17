@@ -401,6 +401,7 @@ class RecommenderSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(many=False)
     recommends = serializers.SerializerMethodField()
+    recommended_to_me = serializers.SerializerMethodField()
     payment_types = serializers.HyperlinkedRelatedField(
         many=True,
         read_only=True,
@@ -417,11 +418,16 @@ class ProfileSerializer(serializers.ModelSerializer):
             "address",
             "payment_types",
             "recommends",
+            "recommended_to_me",
         )
         depth = 1
 
     def get_recommends(self, customer):
         recs = Recommendation.objects.filter(recommender=customer)
+        return RecommenderSerializer(recs, many=True, context=self.context).data
+
+    def get_recommended_to_me(self, customer):
+        recs = Recommendation.objects.filter(customer=customer)
         return RecommenderSerializer(recs, many=True, context=self.context).data
 
 
