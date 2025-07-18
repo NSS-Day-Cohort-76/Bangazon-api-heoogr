@@ -43,6 +43,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_path",
             "average_rating",
             "can_be_rated",
+            "category_id"
         )
         depth = 1
 
@@ -399,3 +400,23 @@ class Products(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+    
+    @action(detail=True, methods=["delete"], url_path="remove_from_order")
+    def remove_from_order(self, request, pk=None):
+        product = self.get_object()
+        customer = Customer.objects.get(user=request.auth.user)
+
+
+        try:
+            open_order = Order.objects.filter(customer=customer, payment_type=None).first()
+
+            if not open_order:
+                return Response({"message": "No open Order Found"})
+
+            order_product = OrderProduct.objects.get(order=open_order, product=product)
+            order_product.delete()
+
+            return Response({"message": "Product removed from cart."}, status=status.HTTP_204_NO_CONTENT)
+
+        except OrderProduct.DoesNotExist:
+            return Response({"message": "Product not in cart"}, status=status.HTTP_404_NOT_FOUND)
