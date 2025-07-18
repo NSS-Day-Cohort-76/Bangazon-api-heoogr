@@ -61,6 +61,15 @@ class Product(SafeDeleteModel):
     #     return sold.count()
 
     @property
+    def can_be_liked(self):
+        """can_be_liked property, which will be calculated per user
+
+        Returns:
+            boolean -- If the user can like the product or not
+        """
+        return self.__can_be_liked
+
+    @property
     def can_be_rated(self):
         """can_be_rated property, which will be calculated per user
 
