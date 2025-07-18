@@ -81,7 +81,7 @@
             "username": "jon",
             "first_name": "Jon",
             "last_name": "Young",
-            "email": "brenda@brendalong.com",
+            "email": "jon@email.com",
             "is_staff": false,
             "is_active": true,
             "date_joined": "2019-10-10T22:48:53.984Z",
