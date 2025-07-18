@@ -123,10 +123,7 @@ class Stores(ViewSet):
         try:
             store = Store.objects.get(pk=pk)
 
-            if store.seller != request.user:
-                return Response({"detail": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
-
-            # Get products for this store with sold count annotation
+            # Get all products for this store with sold count
             products = Product.objects.filter(customer__user=store.seller).annotate(
                 sold_count=Count(
                     "lineitems",
@@ -134,14 +131,18 @@ class Stores(ViewSet):
                 )
             )
 
-            # Categorize products based on quantity and sales
+            # Always return selling products
             selling = products.filter(quantity__gt=0)
-            sold = products.filter(quantity=0, sold_count__gt=0)
-
-            return Response({
+            response_data = {
                 "selling": ProductSerializer(selling, many=True, context={"request": request}).data,
-                "sold": ProductSerializer(sold, many=True, context={"request": request}).data,
-            }, status=status.HTTP_200_OK)
+            }
+
+            # Only return 'sold' if viewer is the store owner
+            if request.user == store.seller:
+                sold = products.filter(quantity=0, sold_count__gt=0)
+                response_data["sold"] = ProductSerializer(sold, many=True, context={"request": request}).data
+
+            return Response(response_data, status=status.HTTP_200_OK)
 
         except Store.DoesNotExist:
             return Response({"detail": "Store not found"}, status=status.HTTP_404_NOT_FOUND)
