@@ -1,6 +1,7 @@
 """View module for handling requests about products"""
 
 from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
 from bangazonapi.models.recommendation import Recommendation
 from django.db.models import Count, Q
 import base64
@@ -180,12 +181,17 @@ class Products(viewsets.ModelViewSet):
                 }
             }
         """
-        try:
-            product = Product.objects.get(pk=pk)
-            serializer = ProductSerializer(product, context={"request": request})
-            return Response(serializer.data)
-        except Exception as ex:
-            return HttpResponseServerError(ex)
+
+        product = get_object_or_404(Product, pk=pk)
+        serializer = ProductSerializer(product, context={"request": request})
+        return Response(serializer.data)
+
+        # try:
+        #     product = Product.objects.get(pk=pk)
+        #     serializer = ProductSerializer(product, context={"request": request})
+        #     return Response(serializer.data)
+        # except Exception as ex:
+        #     return HttpResponseServerError(ex)
 
     def update(self, request, pk=None):
         """
@@ -326,13 +332,7 @@ class Products(viewsets.ModelViewSet):
             products = products.order_by("-created_date")[: int(quantity)]
 
         if number_sold is not None:
-
-            def sold_filter(product):
-                if product.number_sold <= int(number_sold):
-                    return True
-                return False
-
-            products = filter(sold_filter, products)
+            products = products.filter(sold_count__lte=int(number_sold))
 
         # Serialize and return
         serializer = ProductSerializer(

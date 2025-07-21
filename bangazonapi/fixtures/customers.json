@@ -34,5 +34,14 @@
         "phone_number": "555-1212",
         "address": "100 Indefatiguable Way"
     }
+},
+{
+    "model": "bangazonapi.customer",
+    "pk": 8,
+    "fields": {
+        "user": 9,
+        "phone_number": "333-1212",
+        "address": "100 Unending Way"
+    }
 }
 ]
