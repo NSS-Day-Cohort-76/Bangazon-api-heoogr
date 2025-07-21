@@ -417,13 +417,14 @@ class ProfileSerializer(serializers.ModelSerializer):
     recommends = serializers.SerializerMethodField()
     recommended_to_me = serializers.SerializerMethodField()
     liked_products = serializers.SerializerMethodField()
+    favorited_sellers = serializers.SerializerMethodField()
     payment_types = serializers.HyperlinkedRelatedField(
         many=True,
         read_only=True,
         view_name="payment-detail",  # Make sure this matches your router name
     )
     store = StoreSerializer(source="user.store", read_only=True)
-    
+
     class Meta:
         model = Customer
         fields = (
@@ -437,8 +438,13 @@ class ProfileSerializer(serializers.ModelSerializer):
             "recommended_to_me",
             "store",
             "liked_products",
+            "favorited_sellers",
         )
         depth = 1
+
+    def get_favorited_sellers(self, obj):
+        favorites = Favorite.objects.filter(customer=obj)
+        return FavoriteSerializer(favorites, many=True, context=self.context).data
 
     def get_recommends(self, customer):
         recs = Recommendation.objects.filter(recommender=customer)
