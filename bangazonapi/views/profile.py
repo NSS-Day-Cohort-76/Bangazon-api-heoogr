@@ -423,6 +423,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         view_name="payment-detail",  # Make sure this matches your router name
     )
     store = StoreSerializer(source="user.store", read_only=True)
+    
     class Meta:
         model = Customer
         fields = (

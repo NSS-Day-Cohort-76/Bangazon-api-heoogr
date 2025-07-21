@@ -1,6 +1,7 @@
 """View module for handling requests about products"""
 
 from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
 from bangazonapi.models.recommendation import Recommendation
 from django.db.models import Count, Q
 import base64
@@ -122,7 +123,7 @@ class Products(viewsets.ModelViewSet):
         customer = Customer.objects.get(user=request.auth.user)
         new_product.customer = customer
 
-        product_category = ProductCategory.objects.get(pk=request.data["categoryId"])
+        product_category = ProductCategory.objects.get(pk=request.data["category_id"])
         new_product.category = product_category
 
         if "image_path" in request.data:
@@ -180,12 +181,17 @@ class Products(viewsets.ModelViewSet):
                 }
             }
         """
-        try:
-            product = Product.objects.get(pk=pk)
-            serializer = ProductSerializer(product, context={"request": request})
-            return Response(serializer.data)
-        except Exception as ex:
-            return HttpResponseServerError(ex)
+
+        product = get_object_or_404(Product, pk=pk)
+        serializer = ProductSerializer(product, context={"request": request})
+        return Response(serializer.data)
+
+        # try:
+        #     product = Product.objects.get(pk=pk)
+        #     serializer = ProductSerializer(product, context={"request": request})
+        #     return Response(serializer.data)
+        # except Exception as ex:
+        #     return HttpResponseServerError(ex)
 
     def update(self, request, pk=None):
         """
