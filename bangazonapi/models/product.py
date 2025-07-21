@@ -18,7 +18,7 @@ class Product(SafeDeleteModel):
         Customer, on_delete=models.DO_NOTHING, related_name="products"
     )
     price = models.FloatField(
-        validators=[MinValueValidator(0.00), MaxValueValidator(10000.00)],
+        validators=[MinValueValidator(0.00), MaxValueValidator(17500.00)],
     )
     description = models.CharField(
         max_length=255,
@@ -59,6 +59,15 @@ class Product(SafeDeleteModel):
     #         product=self, order__payment_type__isnull=False
     #     )
     #     return sold.count()
+
+    @property
+    def can_be_liked(self):
+        """can_be_liked property, which will be calculated per user
+
+        Returns:
+            boolean -- If the user can like the product or not
+        """
+        return self.__can_be_liked
 
     @property
     def can_be_rated(self):
