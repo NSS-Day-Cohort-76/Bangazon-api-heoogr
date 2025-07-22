@@ -433,8 +433,9 @@ class Products(viewsets.ModelViewSet):
             )
 
         except OrderProduct.DoesNotExist:
-            return Response({"message": "Product not in cart"}, status=status.HTTP_404_NOT_FOUND)
-    
+            return Response(
+                {"message": "Product not in cart"}, status=status.HTTP_404_NOT_FOUND
+            )
 
     @action(detail=True, methods=["post"], url_path="rate-product")
     def rate_product(self, request, pk=None):
@@ -447,7 +448,10 @@ class Products(viewsets.ModelViewSet):
             try:
                 data = json.loads(data)
             except json.JSONDecodeError:
-                return Response({"message": "Invalid JSON payload"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"message": "Invalid JSON payload"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         print("Data received:", data)
 
@@ -456,7 +460,9 @@ class Products(viewsets.ModelViewSet):
         try:
             customer = Customer.objects.get(user=request.user)
         except Customer.DoesNotExist:
-            return Response({"message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         # Validate rating value
         try:
@@ -479,5 +485,6 @@ class Products(viewsets.ModelViewSet):
             defaults={"rating": rating, "review": review},
         )
 
-        return Response({"message": "Rating submitted successfully"}, status=status.HTTP_201_CREATED)
-
+        return Response(
+            {"message": "Rating submitted successfully"}, status=status.HTTP_201_CREATED
+        )
