@@ -26,10 +26,15 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 from django.db import models
 
+class ProductCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductCategory
+        fields = ['id', 'name']
 
 class ProductSerializer(serializers.ModelSerializer):
     number_sold = serializers.IntegerField(source="sold_count", read_only=True)
     average_rating = serializers.FloatField(read_only=True)
+    category = ProductCategorySerializer(read_only=True)
 
     """JSON serializer for products"""
 
@@ -47,9 +52,10 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_path",
             "average_rating",
             "can_be_rated",
-            "category_id"
+            "category"
         )
-        depth = 1
+
+
 
 
 class Products(viewsets.ModelViewSet):
