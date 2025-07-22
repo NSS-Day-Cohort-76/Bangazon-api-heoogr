@@ -26,22 +26,22 @@ class OrderLineItemSerializer(serializers.HyperlinkedModelSerializer):
         depth = 1
 
 
-class PaymentSerializer(serializers.HyperlinkedModelSerializer):
-    obscured_num = serializers.ReadOnlyField()
+# class PaymentSerializer(serializers.HyperlinkedModelSerializer):
+#     obscured_num = serializers.ReadOnlyField()
 
-    class Meta:
-        model = Payment
-        fields = (
-            "url",
-            "id",
-            "merchant_name",
-            "account_number",
-            "expiration_date",
-            "create_date",
-            "customer",
-            "obscured_num",
-        )
-        depth = 1
+#     class Meta:
+#         model = Payment
+#         fields = (
+#             "url",
+#             "id",
+#             "merchant_name",
+#             "account_number",
+#             "expiration_date",
+#             "create_date",
+#             "customer",
+#             "obscured_num",
+#         )
+#         depth = 1
 
 
 class OrderSerializer(serializers.HyperlinkedModelSerializer):

@@ -2,6 +2,7 @@
 
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
+import json
 from bangazonapi.models.recommendation import Recommendation
 from django.db.models import Count, Q
 import base64
@@ -18,6 +19,7 @@ from bangazonapi.models import (
     OrderProduct,
     Order,
     ProductLike,
+    ProductRating,
 )
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -31,6 +33,7 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     number_sold = serializers.IntegerField(source="sold_count", read_only=True)
+    average_rating = serializers.FloatField(read_only=True)
     category = ProductCategorySerializer(read_only=True)
 
     """JSON serializer for products"""
@@ -426,3 +429,50 @@ class Products(viewsets.ModelViewSet):
 
         except OrderProduct.DoesNotExist:
             return Response({"message": "Product not in cart"}, status=status.HTTP_404_NOT_FOUND)
+    
+
+    @action(detail=True, methods=["post"], url_path="rate-product")
+    def rate_product(self, request, pk=None):
+        """Allow authenticated customers to rate a product."""
+        print("RAW BODY:", request.body)
+        print("HEADERS:", request.headers)
+        # Parse incoming data
+        data = request.data
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except json.JSONDecodeError:
+                return Response({"message": "Invalid JSON payload"}, status=status.HTTP_400_BAD_REQUEST)
+
+        print("Data received:", data)
+
+        # Get related objects
+        product = get_object_or_404(Product, pk=pk)
+        try:
+            customer = Customer.objects.get(user=request.user)
+        except Customer.DoesNotExist:
+            return Response({"message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate rating value
+        try:
+            rating = float(data.get("rating"))
+            if not 1 <= rating <= 5:
+                raise ValueError()
+        except (TypeError, ValueError):
+            return Response(
+                {"message": "Rating must be a number between 1 and 5"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Optional review
+        review = data.get("review", "").strip()
+
+        # Save or update the rating
+        ProductRating.objects.update_or_create(
+            customer=customer,
+            product=product,
+            defaults={"rating": rating, "review": review},
+        )
+
+        return Response({"message": "Rating submitted successfully"}, status=status.HTTP_201_CREATED)
+
