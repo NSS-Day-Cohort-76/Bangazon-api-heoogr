@@ -48,7 +48,7 @@ urlpatterns = [
         name="favorited_sellers_report",
     ),
     path(
-      "reports/orders?status=incomplete",
+      "reports/orders",
       views.incomplete_orders,
       name="incomplete_orders"
     )

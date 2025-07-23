@@ -3,7 +3,6 @@ from django.shortcuts import render, get_object_or_404
 
 
 def incomplete_orders(request):
-  status_incomplete = request.GET.get('status')
   orders = Order.objects.filter(payment_type=None)
 
   order_data = []
@@ -17,6 +16,4 @@ def incomplete_orders(request):
     })
 
     context = {"orders": order_data}
-    return render(request, "reports/incomplete.html", context)
-
-  customer = Customer.objects.filter()
+  return render(request, "reports/incomplete.html", context)
