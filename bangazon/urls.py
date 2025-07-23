@@ -47,4 +47,9 @@ urlpatterns = [
         favorited_sellers_report,
         name="favorited_sellers_report",
     ),
+    path(
+      "reports/orders",
+      views.incomplete_orders,
+      name="incomplete_orders"
+    )
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
