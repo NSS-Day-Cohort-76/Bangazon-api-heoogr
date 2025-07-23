@@ -123,7 +123,7 @@ class ProductTests(APITestCase):
         self.test_create_product()
 
         # Submit a rating including review
-        url = "/ratings"
+        url = "/products"
         data = {
             "product": 1,  # use 'product' to match model field
             "rating": 5,   # use 'rating' to match model field name (not 'score')

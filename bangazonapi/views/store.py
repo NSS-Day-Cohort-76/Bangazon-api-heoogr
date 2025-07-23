@@ -1,5 +1,5 @@
 from django.http import HttpResponseServerError
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.core.exceptions import PermissionDenied
 from rest_framework import serializers, status
 from rest_framework.response import Response
@@ -27,11 +27,35 @@ class UserSerializer(serializers.ModelSerializer):
 class StoreSerializer(serializers.ModelSerializer):
     seller = UserSerializer(read_only=True)
     can_be_favorited = serializers.SerializerMethodField()
+    products = ProductSerializer(read_only=True)
+    total_products = serializers.SerializerMethodField()
+    total_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = Store
-        fields = ["id", "name", "description", "seller", "can_be_favorited"]
+        fields = ["id", "name", "description", "seller", "can_be_favorited", "products", "total_products", "total_quantity"]
         read_only_fields = ["id", "seller"]
+
+    from django.db.models import Count, Q, Sum
+
+    def get_total_products(self, obj):
+        products = Product.objects.filter(customer__user=obj.seller).annotate(
+            sold_count=Count(
+                "lineitems", filter=Q(lineitems__order__payment_type__isnull=False)
+            )
+        )
+        selling = products.filter(quantity__gt=0)
+        return selling.count()
+
+    def get_total_quantity(self, obj):
+        products = Product.objects.filter(customer__user=obj.seller).annotate(
+            sold_count=Count(
+                "lineitems", filter=Q(lineitems__order__payment_type__isnull=False)
+            )
+        )
+        selling = products.filter(quantity__gt=0)
+        return selling.aggregate(total=Sum("quantity"))["total"] or 0
+
 
     def get_can_be_favorited(self, obj):
         request = self.context.get("request")
