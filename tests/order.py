@@ -30,6 +30,14 @@ class OrderTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
+        # Create a Payment_type
+        url = "/paymenttypes"
+        data = {'merchant_name': "Visa", 'account_number': 123432132, 'expiration_date': '2029-02-28T00:00:00Z', 'create_date': "2025-02-28T00:00:00Z"}
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
     def test_add_product_to_order(self):
         """
         Ensure we can add a product to an order.
@@ -81,10 +89,42 @@ class OrderTests(APITestCase):
 
     # TODO: Complete order by adding payment type
 
-    # TODO: New line item is not added to closed order
-
-    def test_new_item_is_added_to_open_order(self):
-        self.test_add_product_to_order()
-
+    def test_complete_order_by_adding_payment_type(self):
         url = "/order"
-        data = {""}
+        payment_type = {'merchant_name': "Visa", 'account_number': 123432132, 'expiration_date': '2029-02-28T00:00:00Z', 'create_date': "2025-02-28T00:00:00Z"}
+        response = self.client.post('/paymenttypes', payment_type, format='json')
+        payment = response.data['id']
+        update_payment = {"payment_type_id": payment}
+
+
+
+    # TODO: New line item is not added to closed order
+    def test_product_added_to_order_is_open(self):
+        # Create product
+        product_data = {
+            "name": "pencil",
+            "price": 4.99,
+            "description": "This is a good item",
+            "quantity": 1,
+            "category_id": 1,
+            "location": "Pineville",
+        }
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post("/products", product_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        product_id = response.data["id"]
+
+        # Add product to cart
+        add_data = {"product_id": product_id}
+        response = self.client.post("/cart", add_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Fetch cart
+        response = self.client.get("/cart", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        cart = json.loads(response.content)
+
+        # Assert product is in open cart
+        self.assertEqual(cart["payment_type"], None)
+        product_ids = [item["product"]["id"] for item in cart["lineitems"]]
+        self.assertIn(product_id, product_ids)
