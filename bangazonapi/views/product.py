@@ -26,10 +26,12 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 from django.db import models
 
+
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
-        fields = ['id', 'name']
+        fields = ["id", "name"]
+
 
 class ProductSerializer(serializers.ModelSerializer):
     number_sold = serializers.IntegerField(source="sold_count", read_only=True)
@@ -52,10 +54,9 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_path",
             "average_rating",
             "can_be_rated",
-            "category"
+            "category_id",
+            "category",
         )
-
-
 
 
 class Products(viewsets.ModelViewSet):
@@ -409,15 +410,16 @@ class Products(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
-    
+
     @action(detail=True, methods=["delete"], url_path="remove_from_order")
     def remove_from_order(self, request, pk=None):
         product = self.get_object()
         customer = Customer.objects.get(user=request.auth.user)
 
-
         try:
-            open_order = Order.objects.filter(customer=customer, payment_type=None).first()
+            open_order = Order.objects.filter(
+                customer=customer, payment_type=None
+            ).first()
 
             if not open_order:
                 return Response({"message": "No open Order Found"})
@@ -425,11 +427,15 @@ class Products(viewsets.ModelViewSet):
             order_product = OrderProduct.objects.get(order=open_order, product=product)
             order_product.delete()
 
-            return Response({"message": "Product removed from cart."}, status=status.HTTP_204_NO_CONTENT)
+            return Response(
+                {"message": "Product removed from cart."},
+                status=status.HTTP_204_NO_CONTENT,
+            )
 
         except OrderProduct.DoesNotExist:
-            return Response({"message": "Product not in cart"}, status=status.HTTP_404_NOT_FOUND)
-    
+            return Response(
+                {"message": "Product not in cart"}, status=status.HTTP_404_NOT_FOUND
+            )
 
     @action(detail=True, methods=["post"], url_path="rate-product")
     def rate_product(self, request, pk=None):
@@ -442,7 +448,10 @@ class Products(viewsets.ModelViewSet):
             try:
                 data = json.loads(data)
             except json.JSONDecodeError:
-                return Response({"message": "Invalid JSON payload"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"message": "Invalid JSON payload"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         print("Data received:", data)
 
@@ -451,7 +460,9 @@ class Products(viewsets.ModelViewSet):
         try:
             customer = Customer.objects.get(user=request.user)
         except Customer.DoesNotExist:
-            return Response({"message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         # Validate rating value
         try:
@@ -474,5 +485,6 @@ class Products(viewsets.ModelViewSet):
             defaults={"rating": rating, "review": review},
         )
 
-        return Response({"message": "Rating submitted successfully"}, status=status.HTTP_201_CREATED)
-
+        return Response(
+            {"message": "Rating submitted successfully"}, status=status.HTTP_201_CREATED
+        )
